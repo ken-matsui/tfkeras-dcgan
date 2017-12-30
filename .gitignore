@@ -3,3 +3,8 @@
 __pycache__
 .python-version
 *.pyc
+
+learning_images
+out
+
+tqdm-4.19.5-py2.py3-none-any.whl
