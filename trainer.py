@@ -27,11 +27,11 @@ class Trainer(object):
 		:return:
 		"""
 		# Generate Noise
-		z = tf.random_uniform([batch_size, self.z_dim], minval=-1, maxval=1)
+		# z = tf.random_uniform([batch_size, self.z_dim], minval=-1, maxval=1)
+		z = tf.placeholder(tf.float32, shape=(batch_size, self.z_dim))
 		# define TF graph
 		x = self.gen(z)
 		y_pred1 = self.dis(x)
-		# print(y_pred1.shape)
 
 		gen_loss = tf.losses.softmax_cross_entropy(tf.zeros(shape=(batch_size, 2), dtype=tf.float32), y_pred1)
 		dis_loss = tf.losses.softmax_cross_entropy(tf.ones(shape=(batch_size, 2), dtype=tf.float32), y_pred1)
@@ -49,21 +49,25 @@ class Trainer(object):
 		n_train = len(X)
 		with tf.Session() as sess:
 			sess.run(init)
+			# The `Iterator.string_handle()` method returns a tensor that can be evaluated
+			# and used to feed the `handle` placeholder.
 			for epoch in range(epochs):
 				perm = np.random.permutation(n_train)
 				gen_loss_sum = np.float32(0)
 				dis_loss_sum = np.float32(0)
-				for i in range(int(n_train / batch_size)):
+				for i in range(int(n_train / batch_size)): # for (i = X.itr.first; i != X.itr.last; ++i)
 					# Load true data form dataset
 					idx = perm[i * batch_size:(i + 1) * batch_size]
 					x_datas = []
 					for j in idx:
 						x_datas.append(X[j])
 					x_batch = np.array(x_datas, dtype=np.float32)
-					train_fd = { x_data: x_batch, K.learning_phase(): 1 }
-					# tf.random_uniformをfeed_dictを渡す．
-					_, gen_loss_val = sess.run([gen_train_step, gen_loss], feed_dict={ K.learning_phase(): 1 })
-					_, dis_loss_val = sess.run([dis_train_step, dis_loss], feed_dict=train_fd)
+					z_data = np.random.uniform(-1, 1, (batch_size, self.z_dim))
+					gen_fd = { z: z_data, K.learning_phase(): 1 }
+					dis_fd = { z: z_data, x_data: x_batch, K.learning_phase(): 1 }
+					# TODO: tf.random_uniformをfeed_dictを渡す．
+					_, gen_loss_val = sess.run([gen_train_step, gen_loss], feed_dict=gen_fd)
+					_, dis_loss_val = sess.run([dis_train_step, dis_loss], feed_dict=dis_fd)
 					gen_loss_sum += gen_loss_val
 					dis_loss_sum += dis_loss_val
 				print("\tepoch, gen_loss, dis_loss = %6d: %6.3f, %6.3f" % (epoch+1, gen_loss_sum, dis_loss_sum))
@@ -79,7 +83,3 @@ class Trainer(object):
 					# z = tf.random_uniform([batch_size, self.z_dim], minval=-1, maxval=1)
 					# x = self.gen(z, test=True)
 					# y = self.dis(x)
-
-
-
-

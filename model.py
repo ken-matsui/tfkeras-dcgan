@@ -67,19 +67,19 @@ class Discriminator(object):
 		'''判別関数．
 		:return: 二次元のVariable
 		'''
-		print(x.name, x.shape)
+		# print(x.name, x.shape)
 		h = A.relu(self.c1(x))
-		print(h.name, h.shape)
+		# print(h.name, h.shape)
 		h = A.relu(self.bn1(self.c2(h)))
-		print(h.name, h.shape)
+		# print(h.name, h.shape)
 		h = A.relu(self.bn2(self.c3(h)))
-		print(h.name, h.shape)
+		# print(h.name, h.shape)
 		h = A.relu(self.bn3(self.c4(h)))
-		print(h.name, h.shape)
+		# print(h.name, h.shape)
 		h = tf.reshape(h, [x.get_shape()[0], 6 * 6 * 512])
-		print(h.name, h.shape)
+		# print(h.name, h.shape)
 		y = self.l1(h)
-		print(y.name, y.shape)
+		# print(y.name, y.shape)
 		return y
 
 class CalcGraph(object):

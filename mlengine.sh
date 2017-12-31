@@ -34,7 +34,7 @@ case $1 in
 		--packages=tqdm-4.19.5-py2.py3-none-any.whl \
 		--runtime-version 1.4 \
 		-- \
-		--indir_path=$INPUT_FILE \
-		--outdir_path="${ML_BACKET}/${PROJECT_NAME}/${JOB_NAME}"
+		--file_path=$INPUT_FILE \
+		--output_path="${ML_BACKET}/${PROJECT_NAME}/${JOB_NAME}"
 	;; # end switch.
 esac
