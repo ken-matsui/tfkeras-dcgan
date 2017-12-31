@@ -1,1 +1,0 @@
-rm -f ./learning_images/.DS_Store

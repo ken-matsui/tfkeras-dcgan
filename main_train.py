@@ -11,25 +11,31 @@ from tensorflow.python.platform import gfile
 from model import Generator, Discriminator
 from trainer import Trainer
 
-FLAGS = tf.app.flags.FLAGS
 tf.app.flags.DEFINE_string("file_path", "./dataset.tfrecord", "GCS or local paths to training data")
 tf.app.flags.DEFINE_string("output_path", "./out", "Output data dir")
+tf.app.flags.DEFINE_integer("batch_size", 10, "batch size")
+tf.app.flags.DEFINE_integer("epoch_num", 1000, "epoch num")
+FLAGS = tf.app.flags.FLAGS
 
 
 def parse_data(raw):
 	feature = {"image": tf.FixedLenFeature((), tf.string, default_value="")}
 	parsed_feature = tf.parse_single_example(raw, feature)
 	image = tf.decode_raw(parsed_feature['image'], tf.uint8)
+	image = tf.reshape(image, [96, 96, 3])
 	image = tf.cast(image, tf.float32) / 255.0
 	return image
 
 def load_data(file_path):
-	dataset = tf.data.TFRecordDataset(file_path)
-	dataset = dataset.map(parse_data)
-	dataset = dataset.shuffle(100)
-	# dataset = dataset.repeat(1000) # epoch_num これしないと無限ループ
-	dataset = dataset.batch(10) # batch_size
-	iterator = dataset.make_initializable_iterator()
+	# 前処理はCPUにやらせる
+	with tf.device('/cpu:0'):
+		dataset = tf.data.TFRecordDataset(file_path)
+		dataset = dataset.map(parse_data)
+		dataset = dataset.shuffle(buffer_size=100)
+		dataset = dataset.batch(FLAGS.batch_size)
+		# dataset = dataset.repeat(FLAGS.epoch_num) # epoch_num これしないと無限ループ
+		iterator = dataset.make_initializable_iterator()
+		print(dataset.output_shapes)
 	return iterator
 
 def make_out_dirs(out):
@@ -41,7 +47,9 @@ def make_out_dirs(out):
 	return model_dir, image_dir
 
 def main(argv):
+	print("Load image from", FLAGS.file_path)
 	X = load_data(FLAGS.file_path)
+	print(len(list(tf.python_io.tf_record_iterator(FLAGS.file_path))), "images loaded.\n")
 
 	gen = Generator(100)
 	dis = Discriminator()
@@ -51,7 +59,7 @@ def main(argv):
 
 	print("Start training...")
 	trainer = Trainer(gen, dis)
-	trainer.fit(X, batch_size=10, epochs=1000)
+	trainer.fit(X, batch_size=FLAGS.batch_size, epochs=FLAGS.epoch_num)
 	print("Training done.")
 
 

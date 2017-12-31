@@ -58,7 +58,7 @@ class Trainer(object):
 				dis_loss_sum = np.float32(0)
 				while True:
 					try:
-						X_data = sess.run(tf.reshape(next_element, [batch_size, 96, 96, 3]))
+						X_data = sess.run(next_element)
 						z_data = np.random.uniform(-1, 1, (batch_size, self.z_dim))
 						train_fd = { z: z_data, x_data: X_data, K.learning_phase(): 1 }
 						_, gen_loss_val = sess.run([gen_train_step, gen_loss], feed_dict=train_fd)
