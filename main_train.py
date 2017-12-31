@@ -12,7 +12,7 @@ from model import Generator, Discriminator
 from trainer import Trainer
 
 FLAGS = tf.app.flags.FLAGS
-tf.app.flags.DEFINE_string("file_path", "./learning_images", "GCS or local paths to training data")
+tf.app.flags.DEFINE_string("file_path", "./dataset.tfrecord", "GCS or local paths to training data")
 tf.app.flags.DEFINE_string("output_path", "./out", "Output data dir")
 
 def _load_data(filename):
@@ -24,7 +24,7 @@ def _load_data(filename):
 	img = tf.image.resize_images(img, [96, 96])
 	return img / 255.0
 
-def load_data(filedir):
+def load_data(file_path):
 	# print("Load image from", filedir)
 	# filenames = gfile.ListDirectory(filedir)
 	# filenames.remove(".DS_Store")
@@ -35,16 +35,48 @@ def load_data(filedir):
 	# print(len(filenames), "images loaded.\n")
 	# iterator = dataset.make_one_shot_iterator()
 	# return iterator.get_next()
-	X = []
-	filenames = os.listdir(filedir)
-	filenames.remove(".DS_Store")
-	for f in filenames:
-		img = cv2.imread(filedir + '/' + f)
-		img = cv2.resize(img, (96, 96))
-		img = img.astype(np.float32)
-		# 正規化
-		X.append(img / 255.0)
-	return X
+	# X = []
+	# filenames = os.listdir(filedir)
+	# filenames.remove(".DS_Store")
+	# for f in filenames:
+	# 	img = cv2.imread(filedir + '/' + f)
+	# 	img = cv2.resize(img, (96, 96))
+	# 	img = img.astype(np.float32)
+	# 	# 正規化
+	# 	X.append(img / 255.0)
+	# return X
+	# 読み込み対象のファイルをqueueに詰める: TFRecordReaderはqueueを利用してファイルを読み込む
+	file_name_queue = tf.train.string_input_producer([file_path])
+	# TFRecordsファイルを読み込む為、TFRecordReaderオブジェクトを生成
+	reader = tf.TFRecordReader()
+	# 読み込み: ファイルから読み込み、dataset_serializedに格納する
+	_, dataset_serialized = reader.read(file_name_queue)
+	# Deserialize: return: Tensor Object
+	features = tf.parse_single_example(
+				dataset_serialized,
+				features={
+					"image": tf.FixedLenFeature([], tf.string),
+					"height": tf.FixedLenFeature([], tf.int64),
+					"width": tf.FixedLenFeature([], tf.int64),
+					"channels": tf.FixedLenFeature([], tf.int64),
+				})
+	with tf.Session() as sess:
+		sess.run(tf.local_variables_initializer())
+		coord = tf.train.Coordinator()
+		threads = tf.train.start_queue_runners(sess=sess, coord=coord)
+		try:
+			# evalにより，Tensor Objectから実数値へ変換
+			height = tf.cast(features["height"], tf.int32).eval()
+			width = tf.cast(features["width"], tf.int32).eval()
+			channels = tf.cast(features["channels"], tf.int32).eval()
+			# 学習時に取り出すため，実数値に変換しない
+			img = tf.reshape(tf.decode_raw(features["image"], tf.uint8), tf.stack([height, width, channels]))
+		finally:
+			coord.request_stop()
+			coord.join(threads)
+	# 正規化
+	img = tf.cast(img, tf.float32) / 255.0
+	return img
 
 def make_out_dirs(out):
 	model_dir = out + "/model"

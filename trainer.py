@@ -33,44 +33,61 @@ class Trainer(object):
 		x = self.gen(z)
 		y_pred1 = self.dis(x)
 
-		gen_loss = tf.losses.softmax_cross_entropy(tf.zeros(shape=(batch_size, 2), dtype=tf.float32), y_pred1)
-		dis_loss = tf.losses.softmax_cross_entropy(tf.ones(shape=(batch_size, 2), dtype=tf.float32), y_pred1)
+		gen_loss = tf.losses.softmax_cross_entropy(tf.zeros(shape=(batch_size, 2), dtype=tf.int32), y_pred1)
+		# gen_loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(labels=tf.zeros(shape=(batch_size, 2), dtype=tf.float32), logits=y_pred1))
+		dis_loss = tf.losses.softmax_cross_entropy(tf.ones(shape=(batch_size, 2), dtype=tf.int32), y_pred1)
+		# dis_loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(labels=tf.ones(shape=(batch_size, 2), dtype=tf.float32), logits=y_pred1))
 
 		x_data = tf.placeholder(tf.float32, shape=(batch_size, 96, 96, 3))
 		y_pred2 = self.dis(x_data)
 
-		dis_loss += tf.losses.softmax_cross_entropy(tf.zeros(shape=(batch_size, 2), dtype=tf.float32), y_pred2)
+		dis_loss += tf.losses.softmax_cross_entropy(tf.zeros(shape=(batch_size, 2), dtype=tf.int32), y_pred2)
+		# dis_loss += tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(labels=tf.zeros(shape=(batch_size, 2), dtype=tf.float32), logits=y_pred2))
 
 		gen_train_step = tf.train.AdamOptimizer(0.05).minimize(gen_loss)
 		dis_train_step = tf.train.AdamOptimizer(0.05).minimize(dis_loss)
 
+		# batchは，キュー形式となっていて，len(X)/batch_size 分のサイズを持っている．
+		# sess.run(batch)とすると，0番地のbatchがdequeされ，(len(X)/batch_size)番地にenqueされる．
+		# そのため，i番地にあったbatchは，i-1番地へとずれる．(実際にはiteratorの移動)
+		# それにより，len(X)/batch_size 回 sess.run()すると，最初のbatchがまた現れる．
+		# 下記コードは，len(X)/batch_size == 10の場合のテストコードである．
+		# if i == 0:
+		# 	temp = X_data
+		# elif i == 10:
+		# 	if temp.all() == X_data.all():
+		# 		print("ok!!!!!!!!")
+		# 	else:
+		# 		print("nooooooo")
+		# このコードは，実際にokを出力する．
+		# そのため，len(X)/batch_size 回で再帰することがわかる．
+		# capacity = buffer size
+		X_batch = tf.train.shuffle_batch([X], batch_size=batch_size, capacity=1000, min_after_dequeue=200)
+		n_train = len(list(tf.python_io.tf_record_iterator("./dataset.tfrecord")))
+
 		init = tf.global_variables_initializer()
 
-		n_train = len(X)
 		with tf.Session() as sess:
 			sess.run(init)
-			# The `Iterator.string_handle()` method returns a tensor that can be evaluated
-			# and used to feed the `handle` placeholder.
-			for epoch in range(epochs):
-				perm = np.random.permutation(n_train)
-				gen_loss_sum = np.float32(0)
-				dis_loss_sum = np.float32(0)
-				for i in range(int(n_train / batch_size)): # for (i = X.itr.first; i != X.itr.last; ++i)
-					# Load true data form dataset
-					idx = perm[i * batch_size:(i + 1) * batch_size]
-					x_datas = []
-					for j in idx:
-						x_datas.append(X[j])
-					x_batch = np.array(x_datas, dtype=np.float32)
-					z_data = np.random.uniform(-1, 1, (batch_size, self.z_dim))
-					gen_fd = { z: z_data, K.learning_phase(): 1 }
-					dis_fd = { z: z_data, x_data: x_batch, K.learning_phase(): 1 }
-					# TODO: tf.random_uniformをfeed_dictを渡す．
-					_, gen_loss_val = sess.run([gen_train_step, gen_loss], feed_dict=gen_fd)
-					_, dis_loss_val = sess.run([dis_train_step, dis_loss], feed_dict=dis_fd)
-					gen_loss_sum += gen_loss_val
-					dis_loss_sum += dis_loss_val
-				print("\tepoch, gen_loss, dis_loss = %6d: %6.3f, %6.3f" % (epoch+1, gen_loss_sum, dis_loss_sum))
+			coord = tf.train.Coordinator()
+			threads = tf.train.start_queue_runners(sess=sess, coord=coord)
+			try:
+				for epoch in range(epochs):
+					gen_loss_sum = np.float32(0)
+					dis_loss_sum = np.float32(0)
+					# ミニバッチ処理ループ
+					for i in range(int(n_train / batch_size)):
+						X_data = sess.run(X_batch)
+						z_data = np.random.uniform(-1, 1, (batch_size, self.z_dim))
+						train_fd = { z: z_data, x_data: X_data, K.learning_phase(): 1 }
+						_, gen_loss_val = sess.run([gen_train_step, gen_loss], feed_dict=train_fd)
+						_, dis_loss_val = sess.run([dis_train_step, dis_loss], feed_dict=train_fd)
+						gen_loss_sum += gen_loss_val
+						dis_loss_sum += dis_loss_val
+					print("\tepoch, gen_loss, dis_loss = %6d: %6.3f, %6.3f" % (epoch+1, gen_loss_sum, dis_loss_sum))
+			finally:
+				coord.request_stop()
+				coord.join(threads)
 
 				# if plotting and epoch%DUMP_NUM == 0:
 				# 	saver = tf.train.Saver()
