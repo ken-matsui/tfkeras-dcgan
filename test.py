@@ -1,21 +1,40 @@
 import tensorflow as tf
-sess = tf.InteractiveSession()
+from PIL import Image
+import numpy as np
+# sess = tf.InteractiveSession()
 
-dataset = tf.data.Dataset.range(10).shuffle(10).batch(2)
-iterator = dataset.make_one_shot_iterator()
-next_element = iterator.get_next()
-while True:
+# 読み込み対象のファイルをqueueに詰める: TFRecordReaderはqueueを利用してファイルを読み込む
+file_name_queue = tf.train.string_input_producer(["./dataset.tfrecords"])
+# TFRecordsファイルを読み込む為、TFRecordReaderオブジェクトを生成
+reader = tf.TFRecordReader()
+# 読み込み: ファイルから読み込み、dataset_serializedに格納する
+_, dataset_serialized = reader.read(file_name_queue)
+# Deserialize: return: Tensor Object
+features = tf.parse_single_example(
+			dataset_serialized,
+			features={
+				"image": tf.FixedLenFeature([], tf.string),
+				"height": tf.FixedLenFeature([], tf.int64),
+				"width": tf.FixedLenFeature([], tf.int64),
+				"channels": tf.FixedLenFeature([], tf.int64),
+			})
+with tf.Session() as sess:
+	sess.run(tf.local_variables_initializer())
+	coord = tf.train.Coordinator()
+	threads = tf.train.start_queue_runners(sess=sess, coord=coord)
 	try:
-		print(sess.run(next_element))
-	except tf.errors.OutOfRangeError:
-		break
+		# evalにより，Tensor Objectから実数値へ変換
+		height = tf.cast(features["height"], tf.int32).eval()
+		width = tf.cast(features["width"], tf.int32).eval()
+		channels = tf.cast(features["channels"], tf.int32).eval()
+		# 学習時に取り出すため，実数値に変換しない
+		img = tf.reshape(tf.decode_raw(features["image"], tf.uint8), tf.stack([height, width, channels]))
+	finally:
+		coord.request_stop()
+		coord.join(threads)
 
-sess.close()
-
-''': ex) Output
-[6 0]
-[9 5]
-[1 8]
-[3 7]
-[2 4]
-'''
+with tf.Session() as sess:
+	coord = tf.train.Coordinator()
+	threads = tf.train.start_queue_runners(sess=sess, coord=coord)
+	img = sess.run(img)
+	Image.fromarray(np.uint8(img)).show()
