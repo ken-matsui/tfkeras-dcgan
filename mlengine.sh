@@ -9,7 +9,7 @@ PROJECT_ID=`gcloud config list project --format "value(core.project)"`
 ML_BACKET="gs://${PROJECT_ID}-ml"
 STAGING_BACKET="gs://${PROJECT_ID}-ml-staging"
 # Image file dir for learning
-INPUT_FILE="${ML_BACKET}/data/${PROJECT_NAME}/"
+INPUT_FILE="${ML_BACKET}/data/${PROJECT_NAME}/dataset.tfrecord"
 
 case $1 in
 "1" )
@@ -38,7 +38,6 @@ case $1 in
 		--staging-bucket=$STAGING_BACKET \
 		--region=us-central1 \
 		--config=./config.yaml \
-		--packages=tqdm-4.19.5-py2.py3-none-any.whl \
 		--runtime-version 1.4 \
 		-- \
 		--file_path=$INPUT_FILE \
