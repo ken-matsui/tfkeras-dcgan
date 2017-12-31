@@ -47,47 +47,27 @@ class Trainer(object):
 		gen_train_step = tf.train.AdamOptimizer(0.05).minimize(gen_loss)
 		dis_train_step = tf.train.AdamOptimizer(0.05).minimize(dis_loss)
 
-		# batchは，キュー形式となっていて，len(X)/batch_size 分のサイズを持っている．
-		# sess.run(batch)とすると，0番地のbatchがdequeされ，(len(X)/batch_size)番地にenqueされる．
-		# そのため，i番地にあったbatchは，i-1番地へとずれる．(実際にはiteratorの移動)
-		# それにより，len(X)/batch_size 回 sess.run()すると，最初のbatchがまた現れる．
-		# 下記コードは，len(X)/batch_size == 10の場合のテストコードである．
-		# if i == 0:
-		# 	temp = X_data
-		# elif i == 10:
-		# 	if temp.all() == X_data.all():
-		# 		print("ok!!!!!!!!")
-		# 	else:
-		# 		print("nooooooo")
-		# このコードは，実際にokを出力する．
-		# そのため，len(X)/batch_size 回で再帰することがわかる．
-		# capacity = buffer size
-		X_batch = tf.train.shuffle_batch([X], batch_size=batch_size, capacity=1000, min_after_dequeue=200)
-		n_train = len(list(tf.python_io.tf_record_iterator("./dataset.tfrecord")))
-
 		init = tf.global_variables_initializer()
+		next_element = X.get_next()
 
 		with tf.Session() as sess:
 			sess.run(init)
-			coord = tf.train.Coordinator()
-			threads = tf.train.start_queue_runners(sess=sess, coord=coord)
-			try:
-				for epoch in range(epochs):
-					gen_loss_sum = np.float32(0)
-					dis_loss_sum = np.float32(0)
-					# ミニバッチ処理ループ
-					for i in range(int(n_train / batch_size)):
-						X_data = sess.run(X_batch)
+			for epoch in range(epochs):
+				sess.run(X.initializer)
+				gen_loss_sum = np.float32(0)
+				dis_loss_sum = np.float32(0)
+				while True:
+					try:
+						X_data = sess.run(tf.reshape(next_element, [batch_size, 96, 96, 3]))
 						z_data = np.random.uniform(-1, 1, (batch_size, self.z_dim))
 						train_fd = { z: z_data, x_data: X_data, K.learning_phase(): 1 }
 						_, gen_loss_val = sess.run([gen_train_step, gen_loss], feed_dict=train_fd)
 						_, dis_loss_val = sess.run([dis_train_step, dis_loss], feed_dict=train_fd)
 						gen_loss_sum += gen_loss_val
 						dis_loss_sum += dis_loss_val
-					print("\tepoch, gen_loss, dis_loss = %6d: %6.3f, %6.3f" % (epoch+1, gen_loss_sum, dis_loss_sum))
-			finally:
-				coord.request_stop()
-				coord.join(threads)
+					except tf.errors.OutOfRangeError:
+						break
+				print("\tepoch, gen_loss, dis_loss = %6d: %6.3f, %6.3f" % (epoch+1, gen_loss_sum, dis_loss_sum))
 
 				# if plotting and epoch%DUMP_NUM == 0:
 				# 	saver = tf.train.Saver()

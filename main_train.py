@@ -15,68 +15,22 @@ FLAGS = tf.app.flags.FLAGS
 tf.app.flags.DEFINE_string("file_path", "./dataset.tfrecord", "GCS or local paths to training data")
 tf.app.flags.DEFINE_string("output_path", "./out", "Output data dir")
 
-def _load_data(filename):
-	image_string = tf.read_file(filename)
-	# Once you upgrade to TF 1.2 decode_png will decode both jpg as well as png and vice versa.
-	# decode_image cannot be used along with resize since it also supports .gif .
-	img = tf.image.decode_png(image_string, channels=3)
-	# img = cv2.resize(img, (96, 96))
-	img = tf.image.resize_images(img, [96, 96])
-	return img / 255.0
+
+def parse_data(raw):
+	feature = {"image": tf.FixedLenFeature((), tf.string, default_value="")}
+	parsed_feature = tf.parse_single_example(raw, feature)
+	image = tf.decode_raw(parsed_feature['image'], tf.uint8)
+	image = tf.cast(image, tf.float32) / 255.0
+	return image
 
 def load_data(file_path):
-	# print("Load image from", filedir)
-	# filenames = gfile.ListDirectory(filedir)
-	# filenames.remove(".DS_Store")
-	# dataset = tf.data.Dataset.from_tensor_slices(filenames) \
-	# 			.map(_load_data) \
-	# 			.shuffle(len(filenames)) \
-	# 			.batch(10)
-	# print(len(filenames), "images loaded.\n")
-	# iterator = dataset.make_one_shot_iterator()
-	# return iterator.get_next()
-	# X = []
-	# filenames = os.listdir(filedir)
-	# filenames.remove(".DS_Store")
-	# for f in filenames:
-	# 	img = cv2.imread(filedir + '/' + f)
-	# 	img = cv2.resize(img, (96, 96))
-	# 	img = img.astype(np.float32)
-	# 	# 正規化
-	# 	X.append(img / 255.0)
-	# return X
-	# 読み込み対象のファイルをqueueに詰める: TFRecordReaderはqueueを利用してファイルを読み込む
-	file_name_queue = tf.train.string_input_producer([file_path])
-	# TFRecordsファイルを読み込む為、TFRecordReaderオブジェクトを生成
-	reader = tf.TFRecordReader()
-	# 読み込み: ファイルから読み込み、dataset_serializedに格納する
-	_, dataset_serialized = reader.read(file_name_queue)
-	# Deserialize: return: Tensor Object
-	features = tf.parse_single_example(
-				dataset_serialized,
-				features={
-					"image": tf.FixedLenFeature([], tf.string),
-					"height": tf.FixedLenFeature([], tf.int64),
-					"width": tf.FixedLenFeature([], tf.int64),
-					"channels": tf.FixedLenFeature([], tf.int64),
-				})
-	with tf.Session() as sess:
-		sess.run(tf.local_variables_initializer())
-		coord = tf.train.Coordinator()
-		threads = tf.train.start_queue_runners(sess=sess, coord=coord)
-		try:
-			# evalにより，Tensor Objectから実数値へ変換
-			height = tf.cast(features["height"], tf.int32).eval()
-			width = tf.cast(features["width"], tf.int32).eval()
-			channels = tf.cast(features["channels"], tf.int32).eval()
-			# 学習時に取り出すため，実数値に変換しない
-			img = tf.reshape(tf.decode_raw(features["image"], tf.uint8), tf.stack([height, width, channels]))
-		finally:
-			coord.request_stop()
-			coord.join(threads)
-	# 正規化
-	img = tf.cast(img, tf.float32) / 255.0
-	return img
+	dataset = tf.data.TFRecordDataset(file_path)
+	dataset = dataset.map(parse_data)
+	dataset = dataset.shuffle(100)
+	# dataset = dataset.repeat(1000) # epoch_num これしないと無限ループ
+	dataset = dataset.batch(10) # batch_size
+	iterator = dataset.make_initializable_iterator()
+	return iterator
 
 def make_out_dirs(out):
 	model_dir = out + "/model"
@@ -97,7 +51,7 @@ def main(argv):
 
 	print("Start training...")
 	trainer = Trainer(gen, dis)
-	trainer.fit(X, batch_size=10, epochs=10000)
+	trainer.fit(X, batch_size=10, epochs=1000)
 	print("Training done.")
 
 
