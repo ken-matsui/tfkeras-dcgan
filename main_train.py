@@ -12,7 +12,7 @@ from model import Generator, Discriminator
 from trainer import Trainer
 
 FLAGS = tf.app.flags.FLAGS
-tf.app.flags.DEFINE_string("indir_path", "./learning_images", "Input image dir")
+tf.app.flags.DEFINE_string("indir_path", "./learning_images", "GCS or local paths to training data")
 tf.app.flags.DEFINE_string("outdir_path", "./out", "Output data dir")
 
 def load_data(file_dir):
@@ -20,7 +20,7 @@ def load_data(file_dir):
 	files = os.listdir(file_dir)
 	files.remove(".DS_Store")
 	for f in tqdm(files):
-		img = cv2.imread(file_dir + f)
+		img = cv2.imread(file_dir + '/' + f)
 		img = cv2.resize(img, (96, 96))
 		img = img.astype(np.float32)
 		# 正規化

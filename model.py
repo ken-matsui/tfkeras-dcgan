@@ -3,12 +3,6 @@
 import tensorflow as tf
 from tensorflow.python.keras import layers as L
 from tensorflow.python.keras import activations as A
-class ClassName(object):
-	"""docstring for ClassName"""
-	def __init__(self, arg):
-		super(ClassName, self).__init__()
-		self.arg = arg
-		
 
 class Generator(object):
 	'''ランダムなベクトルから画像を生成する画像作成機
@@ -16,7 +10,7 @@ class Generator(object):
 	def __init__(self, z_dim):
 		super(Generator, self).__init__()
 		with tf.variable_scope("generator"):
-			self.l1 = L.Dense(512 * 6 * 6, input_shape=(z_dim, 100))
+			self.l1 = L.Dense(512 * 6 * 6, input_shape=(100, z_dim))
 
 			self.dc1 = L.Conv2DTranspose(256, kernel_size=4, strides=2, padding="same")
 			self.dc2 = L.Conv2DTranspose(128, kernel_size=4, strides=2, padding="same")
@@ -34,7 +28,7 @@ class Generator(object):
 		# print(z.name, z.shape)
 		h = self.l1(z)
 		# print(h.name, h.shape)
-		h = tf.reshape(h, [z.get_shape()[0], 512, 6, 6])
+		h = tf.reshape(h, [z.get_shape()[0], 6, 6, 512])
 		# print(h.name, h.shape)
 		h = A.relu(self.bn1(h))
 		# print(h.name, h.shape)
@@ -59,11 +53,11 @@ class Discriminator(object):
 			self.c3 = L.Conv2D(256, kernel_size=4, strides=2, padding="same")
 			self.c4 = L.Conv2D(512, kernel_size=4, strides=2, padding="same")
 
-			self.l1 = L.Dense(2)
-
 			self.bn1 = L.BatchNormalization(input_shape=(128,))
 			self.bn2 = L.BatchNormalization(input_shape=(256,))
 			self.bn3 = L.BatchNormalization(input_shape=(512,))
+
+			self.l1 = L.Dense(2)
 
 		# ReLU test
 		# with tf.Session() as sess:
@@ -73,17 +67,19 @@ class Discriminator(object):
 		'''判別関数．
 		:return: 二次元のVariable
 		'''
-		# print(x.name, x.shape)
+		print(x.name, x.shape)
 		h = A.relu(self.c1(x))
-		# print(h.name, h.shape)
+		print(h.name, h.shape)
 		h = A.relu(self.bn1(self.c2(h)))
-		# print(h.name, h.shape)
+		print(h.name, h.shape)
 		h = A.relu(self.bn2(self.c3(h)))
-		# print(h.name, h.shape)
+		print(h.name, h.shape)
 		h = A.relu(self.bn3(self.c4(h)))
-		# print(h.name, h.shape)
+		print(h.name, h.shape)
+		h = tf.reshape(h, [x.get_shape()[0], 6 * 6 * 512])
+		print(h.name, h.shape)
 		y = self.l1(h)
-		# print(y.name, y.shape)
+		print(y.name, y.shape)
 		return y
 
 class CalcGraph(object):

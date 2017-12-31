@@ -31,14 +31,15 @@ class Trainer(object):
 		# define TF graph
 		x = self.gen(z)
 		y_pred1 = self.dis(x)
+		# print(y_pred1.shape)
 
-		gen_loss = tf.losses.softmax_cross_entropy(tf.zeros(shape=(batch_size, 512, 6, 2), dtype=tf.float32), y_pred1)
-		dis_loss = tf.losses.softmax_cross_entropy(tf.ones(shape=(batch_size, 512, 6, 2), dtype=tf.float32), y_pred1)
+		gen_loss = tf.losses.softmax_cross_entropy(tf.zeros(shape=(batch_size, 2), dtype=tf.float32), y_pred1)
+		dis_loss = tf.losses.softmax_cross_entropy(tf.ones(shape=(batch_size, 2), dtype=tf.float32), y_pred1)
 
 		x_data = tf.placeholder(tf.float32, shape=(batch_size, 96, 96, 3))
 		y_pred2 = self.dis(x_data)
 
-		dis_loss += tf.losses.softmax_cross_entropy(tf.zeros(shape=(batch_size, 6, 6, 2), dtype=tf.float32), y_pred2)
+		dis_loss += tf.losses.softmax_cross_entropy(tf.zeros(shape=(batch_size, 2), dtype=tf.float32), y_pred2)
 
 		gen_train_step = tf.train.AdamOptimizer(0.05).minimize(gen_loss)
 		dis_train_step = tf.train.AdamOptimizer(0.05).minimize(dis_loss)
@@ -60,6 +61,7 @@ class Trainer(object):
 						x_datas.append(X[j])
 					x_batch = np.array(x_datas, dtype=np.float32)
 					train_fd = { x_data: x_batch, K.learning_phase(): 1 }
+					# tf.random_uniformをfeed_dictを渡す．
 					_, gen_loss_val = sess.run([gen_train_step, gen_loss], feed_dict={ K.learning_phase(): 1 })
 					_, dis_loss_val = sess.run([dis_train_step, dis_loss], feed_dict=train_fd)
 					gen_loss_sum += gen_loss_val
