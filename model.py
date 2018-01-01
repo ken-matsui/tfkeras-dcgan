@@ -10,7 +10,7 @@ class Generator(object):
 	def __init__(self, z_dim):
 		super(Generator, self).__init__()
 		with tf.variable_scope("generator"):
-			self.l1 = L.Dense(512 * 6 * 6, input_shape=(100, z_dim))
+			self.l1 = L.Dense(6 * 6 * 512, input_shape=(100, z_dim))
 
 			self.dc1 = L.Conv2DTranspose(256, kernel_size=4, strides=2, padding="same")
 			self.dc2 = L.Conv2DTranspose(128, kernel_size=4, strides=2, padding="same")
@@ -24,7 +24,7 @@ class Generator(object):
 
 			self.z_dim = z_dim
 
-	def __call__(self, z, test=False):
+	def __call__(self, z):
 		# print(z.name, z.shape)
 		h = self.l1(z)
 		# print(h.name, h.shape)

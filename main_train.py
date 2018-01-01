@@ -11,11 +11,12 @@ from tensorflow.python.platform import gfile
 from model import Generator, Discriminator
 from trainer import Trainer
 
-tf.app.flags.DEFINE_string("file_path", "./dataset.tfrecord", "GCS or local paths to training data")
-tf.app.flags.DEFINE_string("output_path", "./out", "Output data dir")
-tf.app.flags.DEFINE_integer("batch_size", 10, "batch size")
-tf.app.flags.DEFINE_integer("epoch_num", 1000, "epoch num")
-FLAGS = tf.app.flags.FLAGS
+flags = tf.app.flags
+flags.DEFINE_string("file_path", "./dataset.tfrecord", "GCS or local paths to training data")
+flags.DEFINE_string("output_path", "./out", "Output data dir")
+flags.DEFINE_integer("batch_size", 1000, "batch size")
+flags.DEFINE_integer("epoch_num", 10, "epoch num")
+FLAGS = flags.FLAGS
 
 
 def parse_data(raw):
@@ -33,9 +34,11 @@ def load_data(file_path):
 		dataset = dataset.map(parse_data)
 		dataset = dataset.shuffle(buffer_size=100)
 		dataset = dataset.batch(FLAGS.batch_size)
-		# dataset = dataset.repeat(FLAGS.epoch_num) # epoch_num これしないと無限ループ
+		# dataset = dataset.repeat(FLAGS.epoch_num) # これしないと無限ループ
+		# iterator = dataset.make_one_shot_iterator()
 		iterator = dataset.make_initializable_iterator()
-		print(dataset.output_shapes)
+		# next_data = iterator.get_next()
+	# return next_data
 	return iterator
 
 def make_out_dirs(out):
