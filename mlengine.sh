@@ -10,7 +10,7 @@ ML_BACKET="gs://${PROJECT_ID}-ml"
 STAGING_BACKET="gs://${PROJECT_ID}-ml-staging"
 # Dataset file directory for learning
 INPUT_FILE="${ML_BACKET}/${PROJECT_NAME}/dataset/dataset.tfrecord"
-OUTPUT_FILE="${ML_BACKET}/${PROJECT_NAME}/output"
+OUTPUT_PATH="${ML_BACKET}/${PROJECT_NAME}/output"
 
 case $1 in
 "1" )
@@ -42,14 +42,17 @@ case $1 in
 		--module-name=DCGAN.main_train \
 		--staging-bucket=$STAGING_BACKET \
 		--region=us-central1 \
-		--config=./config.yaml \
+		--scale-tier=BASIC_GPU \
 		--runtime-version 1.4 \
 		-- \
 		--file_path=$INPUT_FILE \
-		--output_path="${OUTPUT_FILE}/${UNIQUE_NAME}"
+		--output_path="${OUTPUT_PATH}/${UNIQUE_NAME}"
 	# Print job details
 	gcloud ml-engine jobs describe ${JOB_ID}
 	# Open log-page
 	open "https://console.cloud.google.com/ml/jobs/${JOB_ID}?project=${PROJECT_ID}"
 	;; # end switch.
+"4" )
+	python -m tensorflow.tensorboard --logdir=$OUTPUT_PATH
+	;;
 esac
