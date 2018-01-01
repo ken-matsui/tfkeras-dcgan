@@ -10,12 +10,12 @@ class Generator(object):
 	def __init__(self, z_dim):
 		super(Generator, self).__init__()
 		with tf.variable_scope("generator"):
-			self.l1 = L.Dense(512 * 6 * 6, input_shape=(100, z_dim))
+			self.l1 = L.Dense(3 * 3 * 512, input_shape=(100, z_dim))
 
-			self.dc1 = L.Conv2DTranspose(256, kernel_size=4, strides=2, padding="same")
-			self.dc2 = L.Conv2DTranspose(128, kernel_size=4, strides=2, padding="same")
-			self.dc3 = L.Conv2DTranspose(64,  kernel_size=4, strides=2, padding="same")
-			self.dc4 = L.Conv2DTranspose(3, kernel_size=4, strides=2, padding="same")
+			self.dc1 = L.Conv2DTranspose(256, kernel_size=2, strides=2, padding="same")
+			self.dc2 = L.Conv2DTranspose(128, kernel_size=2, strides=2, padding="same")
+			self.dc3 = L.Conv2DTranspose(64,  kernel_size=2, strides=2, padding="same")
+			self.dc4 = L.Conv2DTranspose(1, kernel_size=3, strides=3, padding="same")
 
 			self.bn1 = L.BatchNormalization(input_shape=(512,))
 			self.bn2 = L.BatchNormalization(input_shape=(256,))
@@ -24,11 +24,11 @@ class Generator(object):
 
 			self.z_dim = z_dim
 
-	def __call__(self, z, test=False):
+	def __call__(self, z):
 		# print(z.name, z.shape)
 		h = self.l1(z)
 		# print(h.name, h.shape)
-		h = tf.reshape(h, [z.get_shape()[0], 6, 6, 512])
+		h = tf.reshape(h, [z.get_shape()[0], 3, 3, 512])
 		# print(h.name, h.shape)
 		h = A.relu(self.bn1(h))
 		# print(h.name, h.shape)
@@ -48,10 +48,10 @@ class Discriminator(object):
 	def __init__(self):
 		super(Discriminator, self).__init__()
 		with tf.variable_scope("discriminator"):
-			self.c1 = L.Conv2D(64, kernel_size=4, strides=2, padding="same", input_shape=(None, 96, 3))
-			self.c2 = L.Conv2D(128, kernel_size=4, strides=2, padding="same")
-			self.c3 = L.Conv2D(256, kernel_size=4, strides=2, padding="same")
-			self.c4 = L.Conv2D(512, kernel_size=4, strides=2, padding="same")
+			self.c1 = L.Conv2D(64, kernel_size=3, strides=3, padding="same", input_shape=(None, 96, 3))
+			self.c2 = L.Conv2D(128, kernel_size=2, strides=2, padding="same")
+			self.c3 = L.Conv2D(256, kernel_size=2, strides=2, padding="same")
+			self.c4 = L.Conv2D(512, kernel_size=2, strides=2, padding="same")
 
 			self.bn1 = L.BatchNormalization(input_shape=(128,))
 			self.bn2 = L.BatchNormalization(input_shape=(256,))
@@ -76,7 +76,7 @@ class Discriminator(object):
 		# print(h.name, h.shape)
 		h = A.relu(self.bn3(self.c4(h)))
 		# print(h.name, h.shape)
-		h = tf.reshape(h, [x.get_shape()[0], 6 * 6 * 512])
+		h = tf.reshape(h, [x.get_shape()[0], 3 * 3 * 512])
 		# print(h.name, h.shape)
 		y = self.l1(h)
 		# print(y.name, y.shape)

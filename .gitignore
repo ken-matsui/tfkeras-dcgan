@@ -7,3 +7,4 @@ __pycache__
 learning_images
 *.tfrecord
 out
+*.gz
