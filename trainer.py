@@ -52,17 +52,14 @@ class Trainer(object):
 		x = self.gen(z)
 		y_pred1 = self.dis(x)
 
-		gen_loss = cross_entropy(tf.zeros(shape=(batch_size, 2), dtype=tf.float32), y_pred1)
-		# gen_loss = tf.losses.softmax_cross_entropy(tf.zeros(shape=(batch_size, 2), dtype=tf.int32), y_pred1)
-		# gen_loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(labels=tf.zeros(shape=(batch_size, 2), dtype=tf.float32), logits=y_pred1))
-		dis_loss = tf.losses.softmax_cross_entropy(tf.ones(shape=(batch_size, 2), dtype=tf.float32), y_pred1)
-		# dis_loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(labels=tf.ones(shape=(batch_size, 2), dtype=tf.float32), logits=y_pred1))
+		gen_loss = tf.reduce_mean(tf.nn.sparse_softmax_cross_entropy_with_logits(labels=tf.zeros(shape=(batch_size), dtype=tf.int32), logits=y_pred1))
+		dis_loss = tf.reduce_mean(tf.nn.sparse_softmax_cross_entropy_with_logits(labels=tf.ones(shape=(batch_size), dtype=tf.int32), logits=y_pred1))
 
 		x_data = tf.placeholder(tf.float32, shape=(batch_size, 96, 96, 3))
 		y_pred2 = self.dis(x_data)
+		# y_pred2 = self.dis(X)
 
-		dis_loss += tf.losses.softmax_cross_entropy(tf.zeros(shape=(batch_size, 2), dtype=tf.float32), y_pred2)
-		# dis_loss += tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(labels=tf.zeros(shape=(batch_size, 2), dtype=tf.float32), logits=y_pred2))
+		dis_loss += tf.reduce_mean(tf.nn.sparse_softmax_cross_entropy_with_logits(labels=tf.zeros(shape=(batch_size), dtype=tf.int32), logits=y_pred2))
 
 		gen_train_step = tf.train.AdamOptimizer(0.001).minimize(gen_loss)
 		dis_train_step = tf.train.AdamOptimizer(0.001).minimize(dis_loss)
@@ -82,24 +79,21 @@ class Trainer(object):
 						z_data = np.random.uniform(-1, 1, (batch_size, self.z_dim))
 						train_fd = { z: z_data, x_data: X_data, K.learning_phase(): 1 }
 						_, gen_loss_val = sess.run([gen_train_step, gen_loss], feed_dict=train_fd)
-						# _, dis_loss_val = sess.run([dis_train_step, dis_loss], feed_dict=train_fd)
+						_, dis_loss_val = sess.run([dis_train_step, dis_loss], feed_dict=train_fd)
 						gen_loss_sum += gen_loss_val
-						# dis_loss_sum += dis_loss_val
-						print(gen_loss_val)
+						dis_loss_sum += dis_loss_val
 					except tf.errors.OutOfRangeError:
 						break
 				print("\tepoch, gen_loss, dis_loss = %6d: %6.3f, %6.3f" % (epoch+1, gen_loss_sum, dis_loss_sum))
 
 		# with tf.train.MonitoredTrainingSession(
 		# 	checkpoint_dir='./out/model',
-		# 	hooks=[Hoge()]
-		# 	) as sess:
+		# 	hooks=[Hoge()]) as sess:
 		# 	while not sess.should_stop():
 		# 		gen_loss_sum = np.float32(0) # callbackで，epoch beforeで処理する
 		# 		dis_loss_sum = np.float32(0)
-		# 		X_data = sess.run(next_element)
 		# 		z_data = np.random.uniform(-1, 1, (batch_size, self.z_dim))
-		# 		train_fd = { z: z_data, x_data: X_data, K.learning_phase(): 1 }
+		# 		train_fd = { z: z_data, K.learning_phase(): 1 }
 		# 		_, gen_loss_val = sess.run([gen_train_step, gen_loss], feed_dict=train_fd)
 		# 		_, dis_loss_val = sess.run([dis_train_step, dis_loss], feed_dict=train_fd)
 		# 		gen_loss_sum += gen_loss_val
