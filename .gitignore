@@ -5,6 +5,7 @@ __pycache__
 *.pyc
 
 learning_images
+mnist_images
 *.tfrecord
 out
 *.gz
