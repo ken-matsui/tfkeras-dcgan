@@ -8,6 +8,12 @@ https://deepage.net/tensorflow/2017/10/07/tfrecord.html
 
 あとは，公式ドキュメント
 
+https://www.tensorflow.org/performance/performance_guide
+https://www.tensorflow.org/versions/r0.12/api_docs/python/train/distributed_execution#MonitoredSession
+https://www.tensorflow.org/api_guides/python/train#Training_Hooks
+
+とか
+
 chmod +x mlengine.sh
 ./mlengine.sh
 
