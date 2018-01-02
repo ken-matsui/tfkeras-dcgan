@@ -15,7 +15,7 @@ OUTPUT_PATH="${ML_BACKET}/${PROJECT_NAME}/output"
 case $1 in
 "1" )
 	# Install python packages(Only once)
-	pip install -r ./requirements.txt
+	# pip install -r ./requirements.txt
 	# Create backets(Only once)
 	gsutil mb -l us-central1 $ML_BACKET
 	gsutil mb -l us-central1 $STAGING_BACKET
@@ -53,6 +53,7 @@ case $1 in
 	open "https://console.cloud.google.com/ml/jobs/${JOB_ID}?project=${PROJECT_ID}"
 	;; # end switch.
 "4" )
-	python -m tensorflow.tensorboard --logdir=$OUTPUT_PATH
+	tensorboard --logdir=$OUTPUT_PATH
+	open "http://localhost:6006"
 	;;
 esac
