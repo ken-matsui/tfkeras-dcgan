@@ -15,6 +15,8 @@ flags.DEFINE_string("output_path", "./output", "Output data dir")
 flags.DEFINE_integer("batch_size", 1000, "Size of batch")
 flags.DEFINE_integer("epoch_num", 10000, "Number of epochs")
 flags.DEFINE_integer("dump_num", 100, "Number of dumps per epoch")
+tf.app.flags.DEFINE_integer('num_gpus', 0, "How many GPUs to use.")
+tf.app.flags.DEFINE_boolean('log_device_placement', False, "Whether to log device placement.")
 FLAGS = flags.FLAGS
 
 
@@ -35,9 +37,15 @@ def load_data(file_path):
 		dataset = dataset.repeat(FLAGS.epoch_num)
 		iterator = dataset.make_one_shot_iterator()
 		next_data = iterator.get_next()
+		next_data.set_shape([FLAGS.batch_size, 96, 96, 3])
 	return next_data
 
 def fit(gen, dis, dataset):
+	"""
+	# GPUを使う場合，with構文のコメントアウトを外し，train_stepまでインデントをあげてください
+	for i in range(FLAGS.num_gpus):
+		with tf.device("/gpu:%d" %i):
+	"""
 	# Noise
 	z = tf.placeholder(tf.float32, shape=[None, gen.z_dim], name="z_noise")
 	# Generate
@@ -54,7 +62,7 @@ def fit(gen, dis, dataset):
 	y_pred2 = dis(dataset)
 	with tf.name_scope("dis_loss2"):
 		dis_loss += tf.reduce_mean(tf.nn.sparse_softmax_cross_entropy_with_logits(labels=tf.zeros([FLAGS.batch_size], dtype=tf.int32), logits=y_pred2))
-	# Optiminze
+	# Optimize
 	with tf.name_scope("gen_train_step"):
 		gen_train_step = tf.train.AdamOptimizer(0.001).minimize(gen_loss, name="gen_Adam")
 	with tf.name_scope("dis_train_step"):
@@ -81,8 +89,10 @@ def fit(gen, dis, dataset):
 
 	# Start logging
 	tf.logging.set_verbosity(tf.logging.INFO)
+	# Log device placement
+	config=tf.ConfigProto(log_device_placement=FLAGS.log_device_placement)
 	train_steps = [gen_train_step, dis_train_step]
-	with tf.train.MonitoredTrainingSession(hooks=hooks) as sess:
+	with tf.train.MonitoredTrainingSession(hooks=hooks, config=config) as sess:
 		while not sess.should_stop():
 			feed_z = np.random.uniform(-1, 1, (FLAGS.batch_size, gen.z_dim))
 			sess.run(train_steps, feed_dict={z: feed_z, K.learning_phase(): True})
