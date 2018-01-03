@@ -39,29 +39,38 @@ def load_data(file_path):
 	return next_data
 
 def fit(gen, dis, dataset):
+	# Noise
 	z = tf.placeholder(tf.float32, shape=[None, gen.z_dim], name="z_noise")
+	# Generate
 	x_pred = gen(z)
+	# Discriminate
 	y_pred1 = dis(x_pred)
+	# Generator's loss
 	with tf.name_scope("gen_loss"):
 		gen_loss = tf.reduce_mean(tf.nn.sparse_softmax_cross_entropy_with_logits(labels=tf.zeros([FLAGS.batch_size], dtype=tf.int32), logits=y_pred1))
+	# Discriminator's loss
 	with tf.name_scope("dis_loss1"):
 		dis_loss = tf.reduce_mean(tf.nn.sparse_softmax_cross_entropy_with_logits(labels=tf.ones([FLAGS.batch_size], dtype=tf.int32), logits=y_pred1))
+	# True Data
 	y_pred2 = dis(dataset)
 	with tf.name_scope("dis_loss2"):
 		dis_loss += tf.reduce_mean(tf.nn.sparse_softmax_cross_entropy_with_logits(labels=tf.zeros([FLAGS.batch_size], dtype=tf.int32), logits=y_pred2))
+	# Optiminze
 	with tf.name_scope("gen_train_step"):
 		gen_train_step = tf.train.AdamOptimizer(0.001).minimize(gen_loss, name="gen_Adam")
 	with tf.name_scope("dis_train_step"):
 		dis_train_step = tf.train.AdamOptimizer(0.001).minimize(dis_loss, name="dis_Adam")
+	# global_step
 	with tf.variable_scope("global_step"):
 		# globalに存在する方のglobal_stepを取得．そのためにvariable_scope．
 		global_step = tf.train.get_or_create_global_step()
 		# global_step = tf.Variable(-1, trainable=False, name='global_step')
 		global_step_op = global_step.assign(global_step + 1)
 
+	# Hooks for MonitoredTrainingSession
 	hooks = Hooks(x_pred, z, gen_loss, dis_loss, global_step_op, FLAGS.output_path)
 
-	# Loggingを開始
+	# Start logging
 	tf.logging.set_verbosity(tf.logging.INFO)
 	train_steps = [gen_train_step, dis_train_step]
 	with tf.train.MonitoredTrainingSession(hooks=hooks) as sess:
