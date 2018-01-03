@@ -35,15 +35,15 @@ class ImageCSListerner(tf.train.CheckpointSaverListener):
 		pylab.savefig(filename, dip=100)
 
 class EpochLoggingTensorHook(tf.train.SessionRunHook):
-	def __init__(self, epoch_num, global_step_op, gen_loss, dis_loss):
+	def __init__(self, iters_per_epoch, global_step_op, gen_loss, dis_loss):
 		"""
-		:epoch_num: iteratorに対するepochの数(epoch_num=10: 10 iter == 1 epoch)
+		:iters_per_epoch: epoch毎のiterator数(iters_per_epoch=10: 10Iter == 1Epoch)
 		"""
 		self._tensors = {"step": global_step_op,
 						 "gen_loss": gen_loss,
 						 "dis_loss": dis_loss}
 		self._tag_order = self._tensors.keys()
-		self._epoch_num = epoch_num
+		self._iters_per_epoch = iters_per_epoch
 
 	def begin(self):
 		self._iter_count = 0
@@ -64,7 +64,7 @@ class EpochLoggingTensorHook(tf.train.SessionRunHook):
 		self._gen_loss_sum += gen_loss
 		self._dis_loss_sum += dis_loss
 
-		if self._iter_count != 0 and self._iter_count % self._epoch_num == 0:
+		if self._iter_count != 0 and self._iter_count % self._iters_per_epoch == 0:
 			log_format = "Epoch %4d: gen_loss=%6.8f, dis_loss=%6.8f"
 			tf.logging.info(log_format % (self._epoch_count, self._gen_loss_sum, self._dis_loss_sum))
 			self._epoch_count += 1
