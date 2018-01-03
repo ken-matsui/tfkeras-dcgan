@@ -9,6 +9,7 @@ http://arakan-pgm-ai.hatenablog.com/entry/2017/05/06/214113
 https://qiita.com/TomokIshii/items/ffe999b3e1a506c396c8
 https://qiita.com/yanosen_jp/items/70e6d6afc36e1c0a3ef3
 https://qiita.com/TomokIshii/items/ffe999b3e1a506c396c8
+https://github.com/tensorflow/tensorflow/blob/r1.4/tensorflow/python/training/basic_session_run_hooks.py
 
 あとは，公式ドキュメント
 
