@@ -1,21 +1,20 @@
 # coding: utf-8
 
-# Inside modules
-import os
 # Outside modules
-import pylab
 import numpy as np
 import tensorflow as tf
 from tensorflow.python.platform import gfile
 from tensorflow.python.keras import backend as K
 # Other modules
-from model import Generator, Discriminator, Hooks
+from model import Generator, Discriminator
+from session_hooks import ImageCSListerner, EpochLoggingTensorHook
 
 flags = tf.app.flags
 flags.DEFINE_string("dataset_path", "./dataset.tfrecord", "GCS or local paths to training data")
 flags.DEFINE_string("output_path", "./output", "Output data dir")
 flags.DEFINE_integer("batch_size", 1000, "batch size")
 flags.DEFINE_integer("epoch_num", 10000, "epoch num")
+flags.DEFINE_integer("dump_num", 100, "dump num")
 FLAGS = flags.FLAGS
 
 
@@ -68,7 +67,18 @@ def fit(gen, dis, dataset):
 		global_step_op = global_step.assign(global_step + 1)
 
 	# Hooks for MonitoredTrainingSession
-	hooks = Hooks(x_pred, z, gen_loss, dis_loss, global_step_op, FLAGS.output_path)
+	# every_n_epoch = len(list(tf.python_io.tf_record_iterator(FLAGS.dataset_path))) // FLAGS.batch_size
+	every_n_epoch = 5
+	hooks = [
+		tf.train.NanTensorHook(gen_loss),
+		tf.train.NanTensorHook(dis_loss),
+		tf.train.CheckpointSaverHook(
+			checkpoint_dir=FLAGS.output_path+"/model",
+			save_steps=FLAGS.dump_num,
+			listeners=[ImageCSListerner(z, x_pred, FLAGS.output_path)]
+		),
+		EpochLoggingTensorHook(every_n_epoch, global_step_op, gen_loss, dis_loss),
+	]
 
 	# Start logging
 	tf.logging.set_verbosity(tf.logging.INFO)

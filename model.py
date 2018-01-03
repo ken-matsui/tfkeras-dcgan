@@ -1,10 +1,6 @@
-# coding: utf-8
-
-import pylab
-import numpy as np
+# Outside modules
 import tensorflow as tf
 from tensorflow.python.keras import layers as L
-from tensorflow.python.keras import backend as K
 from tensorflow.python.keras import activations as A
 
 class Generator(object):
@@ -77,57 +73,3 @@ class Discriminator(object):
 			y = self.l1(h)
 			# print(y.name, y.shape, "\n")
 		return y
-
-DUMP_NUM = 100
-class Hooks(object):
-	'''MonitoredTrainingSessionに渡すためのhooks
-	:return: hooks
-	'''
-	def __new__(cls, x_pred, z, gen_loss, dis_loss, global_step_op, output_path):
-		class ImageCSListerner(tf.train.CheckpointSaverListener):
-			def after_save(self, session, global_step_value):
-				pylab.rcParams['figure.figsize'] = (16.0, 16.0)
-				pylab.clf()
-				row = 5
-				s = row**2
-				feed_z = np.random.uniform(-1, 1, 100 * s).reshape(-1, 100).astype(np.float32)
-				x_val = session.run(x_pred, feed_dict={z: feed_z, K.learning_phase(): False})
-				xs = np.reshape(x_val, (-1, 3, 96, 96))
-				for i in range(s):
-					tmp = xs[i].transpose(1, 2, 0)
-					tmp = np.clip(tmp, 0.0, 1.0)
-					pylab.subplot(row, row, i+1)
-					pylab.imshow(tmp)
-					pylab.axis("off")
-				filename = "%s/epoch-%s.png" % (output_path+"/images", global_step_value)
-				tf.logging.info("Plotting image for %s into %s." % (global_step_value, filename))
-				pylab.savefig(filename, dip=100)
-
-		log_format = "Iter %4d: gen_loss=%6.8f, dis_loss=%6.8f"
-		# Hookの定義
-		hooks = [
-			# 与えたlossがNaNを出せば例外を発生させるHook
-			tf.train.NanTensorHook(gen_loss),
-			tf.train.NanTensorHook(dis_loss),
-			# 指定イテレート回数分ログを出力するHook
-			tf.train.LoggingTensorHook(
-				every_n_iter=1,
-				tensors={
-					"step": global_step_op,
-					"gen_loss": gen_loss,
-					"dis_loss": dis_loss
-				},
-				formatter=lambda t: log_format % (
-					t["step"],
-					t["gen_loss"],
-					t["dis_loss"]
-				)
-			), # 関数から，このクラスのselfにぶち込めば，state保管できるんじゃない？？そこから，指定回数文の総和を持ってきて，出力すればBeautiful!
-			tf.train.CheckpointSaverHook(
-				checkpoint_dir=output_path+"/model",
-				save_steps=DUMP_NUM,
-				listeners=[ImageCSListerner()]
-			),
-		]
-		return hooks
-
