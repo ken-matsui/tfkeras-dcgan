@@ -50,7 +50,7 @@ case $2 in
 		# Upload to ml-engine
 		gcloud ml-engine jobs submit training ${JOB_ID} \
 			--package-path=../DCGAN \
-			--module-name=DCGAN.main_train \
+			--module-name=DCGAN.trainer \
 			--staging-bucket=$STAGING_BACKET \
 			--region=us-central1 \
 			--scale-tier=BASIC_GPU \
