@@ -12,8 +12,8 @@ from tensorflow.python.keras import backend as K
 from model import Generator, Discriminator, Hooks
 
 flags = tf.app.flags
-flags.DEFINE_string("file_path", "./dataset.tfrecord", "GCS or local paths to training data")
-flags.DEFINE_string("output_path", "./out", "Output data dir")
+flags.DEFINE_string("dataset_path", "./dataset.tfrecord", "GCS or local paths to training data")
+flags.DEFINE_string("output_path", "./output", "Output data dir")
 flags.DEFINE_integer("batch_size", 1000, "batch size")
 flags.DEFINE_integer("epoch_num", 10000, "epoch num")
 FLAGS = flags.FLAGS
@@ -38,7 +38,7 @@ def load_data(file_path):
 		next_data = iterator.get_next()
 	return next_data
 
-def fit(gen, dis, X):
+def fit(gen, dis, dataset):
 	z = tf.placeholder(tf.float32, shape=[None, gen.z_dim], name="z_noise")
 	x_pred = gen(z)
 	y_pred1 = dis(x_pred)
@@ -46,7 +46,7 @@ def fit(gen, dis, X):
 		gen_loss = tf.reduce_mean(tf.nn.sparse_softmax_cross_entropy_with_logits(labels=tf.zeros([FLAGS.batch_size], dtype=tf.int32), logits=y_pred1))
 	with tf.name_scope("dis_loss1"):
 		dis_loss = tf.reduce_mean(tf.nn.sparse_softmax_cross_entropy_with_logits(labels=tf.ones([FLAGS.batch_size], dtype=tf.int32), logits=y_pred1))
-	y_pred2 = dis(X)
+	y_pred2 = dis(dataset)
 	with tf.name_scope("dis_loss2"):
 		dis_loss += tf.reduce_mean(tf.nn.sparse_softmax_cross_entropy_with_logits(labels=tf.zeros([FLAGS.batch_size], dtype=tf.int32), logits=y_pred2))
 	with tf.name_scope("gen_train_step"):
@@ -70,9 +70,9 @@ def fit(gen, dis, X):
 			sess.run(train_steps, feed_dict={z: feed_z, K.learning_phase(): True})
 
 def main(argv):
-	print("Load image from", FLAGS.file_path)
-	X = load_data(FLAGS.file_path)
-	print(len(list(tf.python_io.tf_record_iterator(FLAGS.file_path))), "images loaded.\n")
+	print("Load image from", FLAGS.dataset_path)
+	dataset = load_data(FLAGS.dataset_path)
+	print(len(list(tf.python_io.tf_record_iterator(FLAGS.dataset_path))), "images loaded.\n")
 
 	# Makedirs GCS or Local
 	gfile.MakeDirs(FLAGS.output_path+"/model")
@@ -82,7 +82,7 @@ def main(argv):
 	dis = Discriminator()
 
 	print("Start training...")
-	fit(gen, dis, X)
+	fit(gen, dis, dataset)
 	print("Training done.")
 
 

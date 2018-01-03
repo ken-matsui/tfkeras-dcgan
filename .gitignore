@@ -1,4 +1,4 @@
-.DS_STORE
+.DS_Store
 
 __pycache__
 .python-version
@@ -7,5 +7,4 @@ __pycache__
 learning_images
 mnist_images
 *.tfrecord
-out
-*.gz
+output
