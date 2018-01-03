@@ -1,7 +1,10 @@
 # coding: utf-8
 
+import pylab
+import numpy as np
 import tensorflow as tf
 from tensorflow.python.keras import layers as L
+from tensorflow.python.keras import backend as K
 from tensorflow.python.keras import activations as A
 
 class Generator(object):
@@ -24,7 +27,7 @@ class Generator(object):
 		self.z_dim = z_dim
 
 	def __call__(self, z):
-		with tf.variable_scope("generator"):
+		with tf.variable_scope("Generator"):
 			# print(z.name, z.shape)
 			h = self.l1(z)
 			# print(h.name, h.shape)
@@ -59,7 +62,7 @@ class Discriminator(object):
 		self.l1 = L.Dense(2)
 
 	def __call__(self, x):
-		with tf.variable_scope("discriminator"):
+		with tf.variable_scope("Discriminator"):
 			# print(x.name, x.shape)
 			h = A.relu(self.c1(x))
 			# print(h.name, h.shape)
@@ -75,29 +78,56 @@ class Discriminator(object):
 			# print(y.name, y.shape, "\n")
 		return y
 
-class CalcGraph(object):
-	'''計算グラフ
-	:return: graph, gen_fetches(step, loss), dis_fetches(step, loss)
+DUMP_NUM = 100
+class Hooks(object):
+	'''MonitoredTrainingSessionに渡すためのhooks
+	:return: hooks
 	'''
-	def __new__(cls, gen, dis, batch_size):
-		# Generate Noise
-		z = tf.random_uniform([batch_size, gen.z_dim], minval=-1, maxval=1)
-		# define TF graph
-		x = gen(z)
-		y_pred1 = dis(x)
+	def __new__(cls, x_pred, z, gen_loss, dis_loss, global_step_op, output_path):
+		class ImageCSListerner(tf.train.CheckpointSaverListener):
+			def after_save(self, session, global_step_value):
+				pylab.rcParams['figure.figsize'] = (16.0, 16.0)
+				pylab.clf()
+				row = 5
+				s = row**2
+				feed_z = np.random.uniform(-1, 1, 100 * s).reshape(-1, 100).astype(np.float32)
+				x_val = session.run(x_pred, feed_dict={z: feed_z, K.learning_phase(): False})
+				xs = np.reshape(x_val, (-1, 3, 96, 96))
+				for i in range(s):
+					tmp = xs[i].transpose(1, 2, 0)
+					tmp = np.clip(tmp, 0.0, 1.0)
+					pylab.subplot(row, row, i+1)
+					pylab.imshow(tmp)
+					pylab.axis("off")
+				filename = "%s/epoch-%s.png" % (output_path+"/images", global_step_value)
+				tf.logging.info("Plotting image for %s into %s." % (global_step_value, filename))
+				pylab.savefig(filename, dip=100)
 
-		gen_loss = tf.losses.softmax_cross_entropy(tf.zeros(shape=(batch_size, 512, 6, 2), dtype=tf.float32), y_pred1)
-		dis_loss = tf.losses.softmax_cross_entropy(tf.ones(shape=(batch_size, 512, 6, 2), dtype=tf.float32), y_pred1)
-
-		x_data = tf.placeholder(tf.float32, shape=(batch_size, 96, 96, 3))
-		y_pred2 = dis(x_data)
-
-		dis_loss += tf.losses.softmax_cross_entropy(tf.zeros(shape=(batch_size, 6, 6, 2), dtype=tf.float32), y_pred2)
-
-		gen_train_step = tf.train.AdamOptimizer(0.05).minimize(gen_loss)
-		dis_train_step = tf.train.AdamOptimizer(0.05).minimize(dis_loss)
-
-		init = tf.global_variables_initializer()
-
-		return init, [gen_train_step, gen_loss], [dis_train_step, dis_loss]
+		log_format = "Iter %4d: gen_loss=%6.8f, dis_loss=%6.8f"
+		# Hookの定義
+		hooks = [
+			# 与えたlossがNaNを出せば例外を発生させるHook
+			tf.train.NanTensorHook(gen_loss),
+			tf.train.NanTensorHook(dis_loss),
+			# 指定イテレート回数分ログを出力するHook
+			tf.train.LoggingTensorHook(
+				every_n_iter=1,
+				tensors={
+					"step": global_step_op,
+					"gen_loss": gen_loss,
+					"dis_loss": dis_loss
+				},
+				formatter=lambda t: log_format % (
+					t["step"],
+					t["gen_loss"],
+					t["dis_loss"]
+				)
+			), # 関数から，このクラスのselfにぶち込めば，state保管できるんじゃない？？そこから，指定回数文の総和を持ってきて，出力すればBeautiful!
+			tf.train.CheckpointSaverHook(
+				checkpoint_dir=output_path+"/model",
+				save_steps=DUMP_NUM,
+				listeners=[ImageCSListerner()]
+			),
+		]
+		return hooks
 
