@@ -36,7 +36,7 @@ case $2 in
 	python to_TFRecord.py $LOCAL_INPUT
 	case $1 in
 	# Copy dataset to cloud storage.
-	"mlengine" ) gsutil cp ./dataset.tfrecord $INPUT_FILE ;;
+	"mlengine" ) gsutil -o GSUtil:parallel_composite_upload_threshold=150M cp ./dataset.tfrecord $INPUT_FILE ;;
 	esac
 	;& # fall-through
 "3" ) # Start Training
