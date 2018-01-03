@@ -10,9 +10,7 @@ https://qiita.com/TomokIshii/items/ffe999b3e1a506c396c8
 https://qiita.com/yanosen_jp/items/70e6d6afc36e1c0a3ef3
 https://qiita.com/TomokIshii/items/ffe999b3e1a506c396c8
 https://github.com/tensorflow/tensorflow/blob/r1.4/tensorflow/python/training/basic_session_run_hooks.py
-
-あとは，公式ドキュメント
-
+https://www.tensorflow.org/api_docs/python/tf/train/SessionRunArgs
 https://www.tensorflow.org/performance/performance_guide
 https://www.tensorflow.org/versions/r1.3/programmers_guide/datasets
 https://www.tensorflow.org/versions/r0.12/api_docs/python/train/distributed_execution#MonitoredSession
