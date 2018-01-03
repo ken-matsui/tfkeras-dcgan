@@ -30,19 +30,24 @@ class ImageCSListerner(tf.train.CheckpointSaverListener):
 			pylab.subplot(row, row, i+1)
 			pylab.imshow(tmp)
 			pylab.axis("off")
-		filename = "%s/epoch-%s.png" % (self.output_path+"/images", global_step_value)
-		tf.logging.info("Plotting image for %s into %s." % (global_step_value, filename))
-		pylab.savefig(filename, dip=100)
+		filename = self.output_path + "/images" + "/epoch%s.png"
+		tf.logging.info("Plotting image for %s into %s." % (global_step_value, filename % ("")))
+		pylab.savefig(filename % ("-" + str(global_step_value)), dip=100)
 
 class EpochLoggingTensorHook(tf.train.SessionRunHook):
 	def __init__(self, iters_per_epoch, global_step_op, gen_loss, dis_loss):
 		"""
 		:iters_per_epoch: epoch毎のiterator数(iters_per_epoch=10: 10Iter == 1Epoch)
+		*********************************************
+		* Iteratorとstepは同じ意味として扱っている．
+		* 明確にglobal_stepを示している場合は，stepとし，
+		* そうでない場合は全てIteratorと呼ぶこととする．
+		* ただし，Userから見えるのは全てIteratorとする．
+		*********************************************
 		"""
 		self._tensors = {"step": global_step_op,
 						 "gen_loss": gen_loss,
 						 "dis_loss": dis_loss}
-		self._tag_order = self._tensors.keys()
 		self._iters_per_epoch = iters_per_epoch
 
 	def begin(self):
@@ -64,16 +69,15 @@ class EpochLoggingTensorHook(tf.train.SessionRunHook):
 		self._gen_loss_sum += gen_loss
 		self._dis_loss_sum += dis_loss
 
-		if self._iter_count != 0 and self._iter_count % self._iters_per_epoch == 0:
-			log_format = "Epoch %4d: gen_loss=%6.8f, dis_loss=%6.8f"
-			tf.logging.info(log_format % (self._epoch_count, self._gen_loss_sum, self._dis_loss_sum))
+		if (self._iter_count != 0) and (self._iter_count % self._iters_per_epoch == 0):
+			epoch_log_format = "Epoch %4d: gen_loss=%6.8f, dis_loss=%6.8f"
+			tf.logging.info(epoch_log_format % (self._epoch_count, self._gen_loss_sum, self._dis_loss_sum))
 			self._epoch_count += 1
 			self._gen_loss_sum = np.float32(0)
 			self._dis_loss_sum = np.float32(0)
-		else:
-			log_format = "Iter %4d: gen_loss=%6.8f, dis_loss=%6.8f\r"
-			# logging感出す
-			sys.stdout.write("INFO:tensorflow:" + log_format % (step, gen_loss, dis_loss))
-			sys.stdout.flush()
-			time.sleep(0.01)
+		# logging感出す
+		iter_log_format = "Iter %4d: gen_loss=%6.8f, dis_loss=%6.8f\r"
+		sys.stdout.write("INFO:tensorflow:" + iter_log_format % (step, gen_loss, dis_loss))
+		sys.stdout.flush()
+		time.sleep(0.01)
 		self._iter_count += 1

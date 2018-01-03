@@ -14,7 +14,7 @@ flags.DEFINE_string("dataset_path", "./dataset.tfrecord", "GCS or local paths to
 flags.DEFINE_string("output_path", "./output", "Output data dir")
 flags.DEFINE_integer("batch_size", 1000, "batch size")
 flags.DEFINE_integer("epoch_num", 10000, "epoch num")
-flags.DEFINE_integer("dump_num", 100, "dump num")
+flags.DEFINE_integer("dump_num", 100, "dump num per epoch")
 FLAGS = flags.FLAGS
 
 
@@ -73,7 +73,7 @@ def fit(gen, dis, dataset):
 		tf.train.NanTensorHook(dis_loss),
 		tf.train.CheckpointSaverHook(
 			checkpoint_dir=FLAGS.output_path+"/model",
-			save_steps=FLAGS.dump_num,
+			save_steps=FLAGS.dump_num*iters_per_epoch,
 			listeners=[ImageCSListerner(z, x_pred, FLAGS.output_path)]
 		),
 		EpochLoggingTensorHook(iters_per_epoch, global_step_op, gen_loss, dis_loss),
