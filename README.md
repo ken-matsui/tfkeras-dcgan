@@ -15,6 +15,7 @@ https://www.tensorflow.org/performance/performance_guide
 https://www.tensorflow.org/versions/r1.3/programmers_guide/datasets
 https://www.tensorflow.org/versions/r0.12/api_docs/python/train/distributed_execution#MonitoredSession
 https://www.tensorflow.org/api_guides/python/train#Training_Hooks
+https://www.tensorflow.org/api_docs/python/tf/train/MonitoredTrainingSession
 
 とか
 
