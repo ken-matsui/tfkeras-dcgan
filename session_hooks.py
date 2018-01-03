@@ -39,10 +39,10 @@ class EpochLoggingTensorHook(tf.train.SessionRunHook):
 		"""
 		:iters_per_epoch: epoch毎のiterator数(iters_per_epoch=10: 10Iter == 1Epoch)
 		*********************************************
-		* Iteratorとstepは同じ意味として扱っている．
-		* 明確にglobal_stepを示している場合は，stepとし，
-		* そうでない場合は全てIteratorと呼ぶこととする．
-		* ただし，Userから見えるのは全てIteratorとする．
+		* Iteratorとstepは同じ意味として扱っている．		*
+		* 明確にglobal_stepを示している場合は，stepとし，	*
+		* そうでない場合は全てIteratorと呼ぶこととする．	*
+		* ただし，Userから見えるのは全てIteratorとする．	*
 		*********************************************
 		"""
 		self._tensors = {"step": global_step_op,
