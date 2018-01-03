@@ -30,7 +30,7 @@ class ImageCSListerner(tf.train.CheckpointSaverListener):
 			pylab.subplot(row, row, i+1)
 			pylab.imshow(tmp)
 			pylab.axis("off")
-		filename = self.output_path + "/images" + "/epoch%s.png"
+		filename = self.output_path + "/images" + "/iter%s.png"
 		tf.logging.info("Plotting image for %s into %s." % (global_step_value, filename % ("")))
 		pylab.savefig(filename % ("-" + str(global_step_value)), dip=100)
 
@@ -52,7 +52,7 @@ class EpochLoggingTensorHook(tf.train.SessionRunHook):
 
 	def begin(self):
 		self._iter_count = 0
-		self._epoch_count = 0
+		self._epoch_count = 1
 		self._current_tensors = {tag: _as_graph_element(tensor)
 								 for (tag, tensor) in self._tensors.items()}
 		self._gen_loss_sum = np.float32(0)
