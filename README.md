@@ -3,8 +3,12 @@
 すごく役に立ったサイト
 
 https://deepage.net/tensorflow/2017/07/18/tensorflow-dataset-api.html
-
 https://deepage.net/tensorflow/2017/10/07/tfrecord.html
+https://deepage.net/tensorflow/2017/06/02/tensorflow-variable.html
+http://arakan-pgm-ai.hatenablog.com/entry/2017/05/06/214113
+https://qiita.com/TomokIshii/items/ffe999b3e1a506c396c8
+https://qiita.com/yanosen_jp/items/70e6d6afc36e1c0a3ef3
+https://qiita.com/TomokIshii/items/ffe999b3e1a506c396c8
 
 あとは，公式ドキュメント
 
