@@ -12,9 +12,9 @@ from session_hooks import ImageCSListerner, EpochLoggingTensorHook
 flags = tf.app.flags
 flags.DEFINE_string("dataset_path", "./dataset.tfrecord", "GCS or local paths to training data")
 flags.DEFINE_string("output_path", "./output", "Output data dir")
-flags.DEFINE_integer("batch_size", 1000, "batch size")
-flags.DEFINE_integer("epoch_num", 10000, "epoch num")
-flags.DEFINE_integer("dump_num", 100, "dump num per epoch")
+flags.DEFINE_integer("batch_size", 1000, "Size of batch")
+flags.DEFINE_integer("epoch_num", 10000, "Number of epochs")
+flags.DEFINE_integer("dump_num", 100, "Number of dumps per epoch")
 FLAGS = flags.FLAGS
 
 
