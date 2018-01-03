@@ -13,6 +13,7 @@ https://qiita.com/TomokIshii/items/ffe999b3e1a506c396c8
 あとは，公式ドキュメント
 
 https://www.tensorflow.org/performance/performance_guide
+https://www.tensorflow.org/versions/r1.3/programmers_guide/datasets
 https://www.tensorflow.org/versions/r0.12/api_docs/python/train/distributed_execution#MonitoredSession
 https://www.tensorflow.org/api_guides/python/train#Training_Hooks
 
