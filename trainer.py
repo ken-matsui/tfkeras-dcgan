@@ -67,8 +67,7 @@ def fit(gen, dis, dataset):
 		global_step_op = global_step.assign(global_step + 1)
 
 	# Hooks for MonitoredTrainingSession
-	# every_n_epoch = len(list(tf.python_io.tf_record_iterator(FLAGS.dataset_path))) // FLAGS.batch_size
-	every_n_epoch = 5
+	iters_per_epoch = len(list(tf.python_io.tf_record_iterator(FLAGS.dataset_path))) // FLAGS.batch_size
 	hooks = [
 		tf.train.NanTensorHook(gen_loss),
 		tf.train.NanTensorHook(dis_loss),
@@ -77,7 +76,7 @@ def fit(gen, dis, dataset):
 			save_steps=FLAGS.dump_num,
 			listeners=[ImageCSListerner(z, x_pred, FLAGS.output_path)]
 		),
-		EpochLoggingTensorHook(every_n_epoch, global_step_op, gen_loss, dis_loss),
+		EpochLoggingTensorHook(iters_per_epoch, global_step_op, gen_loss, dis_loss),
 	]
 
 	# Start logging
