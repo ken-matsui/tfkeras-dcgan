@@ -15,8 +15,8 @@ flags.DEFINE_string("output_path", "./output", "Output data dir")
 flags.DEFINE_integer("batch_size", 1000, "Size of batch")
 flags.DEFINE_integer("epoch_num", 10000, "Number of epochs")
 flags.DEFINE_integer("dump_num", 100, "Number of dumps per epoch")
-tf.app.flags.DEFINE_integer('num_gpus', 0, "How many GPUs to use.")
-tf.app.flags.DEFINE_boolean('log_device_placement', False, "Whether to log device placement.")
+flags.DEFINE_integer('num_gpus', 0, "How many GPUs to use.")
+flags.DEFINE_boolean('log_device_placement', False, "Whether to log device placement.")
 FLAGS = flags.FLAGS
 
 
