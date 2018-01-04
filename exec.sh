@@ -69,7 +69,7 @@ case $2 in
 	(sleep 10; open "http://localhost:6006") &
 	case $1 in
 	"local" ) tensorboard --logdir=./output/model --host=localhost ;;
-	"mlengine" ) tensorboard --logdir=$OUTPUT_PATH --host=localhost ;;
+	"mlengine" ) tensorboard --logdir="${OUTPUT_PATH}/${UNIQUE_NAME}/model" --host=localhost ;;
 	esac
 	;; # end switch.
 esac
