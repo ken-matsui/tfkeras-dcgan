@@ -90,7 +90,7 @@ def fit(gen, dis, dataset):
 	# Start logging
 	tf.logging.set_verbosity(tf.logging.INFO)
 	# Log device placement
-	config=tf.ConfigProto(log_device_placement=FLAGS.log_device_placement)
+	config = tf.ConfigProto(log_device_placement=FLAGS.log_device_placement)
 	train_steps = [gen_train_step, dis_train_step]
 	with tf.train.MonitoredTrainingSession(hooks=hooks, config=config) as sess:
 		while not sess.should_stop():
