@@ -2,9 +2,12 @@
 import sys
 import time
 # Outside modules
+import matplotlib
+matplotlib.use('agg')
 import pylab
 import numpy as np
 import tensorflow as tf
+from tensorflow.python.platform import gfile
 from tensorflow.python.keras import backend as K
 from tensorflow.python.training.basic_session_run_hooks import _as_graph_element
 
@@ -30,9 +33,14 @@ class ImageCSListerner(tf.train.CheckpointSaverListener):
 			pylab.subplot(row, row, i+1)
 			pylab.imshow(tmp)
 			pylab.axis("off")
-		filename = self.output_path + "/images" + "/iter%s.png"
-		tf.logging.info("Plotting image for %s into %s." % (global_step_value, filename % ("")))
-		pylab.savefig(filename % ("-" + str(global_step_value)), dip=100)
+		filename = "/iter%s.png"
+		output_path = self.output_path + "/images" + filename
+		tf.logging.info("Plotting image for %s into %s." % (global_step_value, output_path % ("")))
+		tmp_path = "." + filename % ("-" + str(global_step_value))
+		pylab.savefig(tmp_path, dip=100)
+		# GCS or Local
+		gfile.Copy(tmp_path, output_path % ("-" + str(global_step_value)), overwrite=True)
+		gfile.Remove(tmp_path)
 
 class EpochLoggingTensorHook(tf.train.SessionRunHook):
 	def __init__(self, iters_per_epoch, global_step_op, gen_loss, dis_loss):
