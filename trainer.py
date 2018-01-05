@@ -12,11 +12,9 @@ from session_hooks import ImageCSListerner, EpochLoggingTensorHook
 flags = tf.app.flags
 flags.DEFINE_string("dataset_path", "./dataset.tfrecord", "GCS or local paths to training data")
 flags.DEFINE_string("output_path", "./output", "Output data dir")
-flags.DEFINE_integer("batch_size", 1000, "Size of batch")
+flags.DEFINE_integer("batch_size", 10, "Size of batch")
 flags.DEFINE_integer("epoch_num", 10000, "Number of epochs")
-flags.DEFINE_integer("dump_num", 100, "Number of dumps per epoch")
-flags.DEFINE_integer('num_gpus', 0, "How many GPUs to use.")
-flags.DEFINE_boolean('log_device_placement', False, "Whether to log device placement.")
+flags.DEFINE_integer("dump_num", 1, "Number of dumps per epoch")
 FLAGS = flags.FLAGS
 
 
@@ -41,11 +39,13 @@ def load_data(file_path):
 	return next_data
 
 def fit(gen, dis, dataset):
-	"""
-	# GPUを使う場合，with構文のコメントアウトを外し，train_stepまでインデントをあげてください
-	for i in range(FLAGS.num_gpus):
-		with tf.device("/gpu:%d" %i):
-	"""
+	with tf.variable_scope("global_step"):
+		# globalに存在する方のglobal_stepを取得．そのためにvariable_scope．
+		global_step = tf.train.get_or_create_global_step()
+		# global_step = tf.Variable(-1, trainable=False, name='global_step')
+		global_step_op = global_step.assign(global_step + 1)
+
+	# Calculation Graph
 	# Noise
 	z = tf.placeholder(tf.float32, shape=[None, gen.z_dim], name="z_noise")
 	# Generate
@@ -67,15 +67,16 @@ def fit(gen, dis, dataset):
 		gen_train_step = tf.train.AdamOptimizer(0.001).minimize(gen_loss, name="gen_Adam")
 	with tf.name_scope("dis_train_step"):
 		dis_train_step = tf.train.AdamOptimizer(0.001).minimize(dis_loss, name="dis_Adam")
-	# global_step
-	with tf.variable_scope("global_step"):
-		# globalに存在する方のglobal_stepを取得．そのためにvariable_scope．
-		global_step = tf.train.get_or_create_global_step()
-		# global_step = tf.Variable(-1, trainable=False, name='global_step')
-		global_step_op = global_step.assign(global_step + 1)
+
+	# Define summaries
+	tf.summary.scalar(gen_loss.name, gen_loss)
+	tf.summary.scalar(dis_loss.name, dis_loss)
+	tf.summary.image(dataset.name, dataset)
+	summary_op = tf.summary.merge_all()
 
 	# Hooks for MonitoredTrainingSession
-	iters_per_epoch = len(list(tf.python_io.tf_record_iterator(FLAGS.dataset_path))) // FLAGS.batch_size
+	# iters_per_epoch = len(list(tf.python_io.tf_record_iterator(FLAGS.dataset_path))) // FLAGS.batch_size
+	iters_per_epoch = 10
 	hooks = [
 		tf.train.NanTensorHook(gen_loss),
 		tf.train.NanTensorHook(dis_loss),
@@ -84,15 +85,18 @@ def fit(gen, dis, dataset):
 			save_steps=FLAGS.dump_num*iters_per_epoch,
 			listeners=[ImageCSListerner(z, x_pred, FLAGS.output_path)]
 		),
+		tf.train.SummarySaverHook(
+			save_steps=FLAGS.dump_num*iters_per_epoch,
+			output_dir=FLAGS.output_path+"/model",
+			summary_op=summary_op
+		),
 		EpochLoggingTensorHook(iters_per_epoch, global_step_op, gen_loss, dis_loss),
 	]
 
 	# Start logging
 	tf.logging.set_verbosity(tf.logging.INFO)
-	# Log device placement
-	config = tf.ConfigProto(log_device_placement=FLAGS.log_device_placement)
 	train_steps = [gen_train_step, dis_train_step]
-	with tf.train.MonitoredTrainingSession(hooks=hooks, config=config) as sess:
+	with tf.train.MonitoredTrainingSession(hooks=hooks) as sess:
 		while not sess.should_stop():
 			feed_z = np.random.uniform(-1, 1, (FLAGS.batch_size, gen.z_dim))
 			sess.run(train_steps, feed_dict={z: feed_z, K.learning_phase(): True})
