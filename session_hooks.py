@@ -83,9 +83,8 @@ class EpochLoggingTensorHook(tf.train.SessionRunHook):
 			self._epoch_count += 1
 			self._gen_loss_sum = np.float32(0)
 			self._dis_loss_sum = np.float32(0)
-		# logging感出す
 		iter_log_format = "Iter %4d: gen_loss=%6.8f, dis_loss=%6.8f\r"
-		sys.stdout.write("INFO:tensorflow:" + iter_log_format % (step, gen_loss, dis_loss))
+		sys.stdout.write(iter_log_format % (step, gen_loss, dis_loss))
 		sys.stdout.flush()
 		time.sleep(0.01)
 		self._iter_count += 1
