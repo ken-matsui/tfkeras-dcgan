@@ -12,7 +12,7 @@ from session_hooks import ImageCSListerner, EpochLoggingTensorHook
 flags = tf.app.flags
 flags.DEFINE_string("dataset_path", "./dataset.tfrecord", "GCS or local paths to training data")
 flags.DEFINE_string("output_path", "./output", "Output data dir")
-flags.DEFINE_integer("batch_size", 10, "Size of batch")
+flags.DEFINE_integer("batch_size", 1000, "Size of batch")
 flags.DEFINE_integer("epoch_num", 10000, "Number of epochs")
 flags.DEFINE_integer("dump_num", 1, "Number of dumps per epoch")
 FLAGS = flags.FLAGS
@@ -75,8 +75,7 @@ def fit(gen, dis, dataset):
 	summary_op = tf.summary.merge_all()
 
 	# Hooks for MonitoredTrainingSession
-	# iters_per_epoch = len(list(tf.python_io.tf_record_iterator(FLAGS.dataset_path))) // FLAGS.batch_size
-	iters_per_epoch = 10
+	iters_per_epoch = len(list(tf.python_io.tf_record_iterator(FLAGS.dataset_path))) // FLAGS.batch_size
 	hooks = [
 		tf.train.NanTensorHook(gen_loss),
 		tf.train.NanTensorHook(dis_loss),
