@@ -78,8 +78,7 @@ def fit(gen, dis, dataset):
 	summary_op = tf.summary.merge_all()
 
 	# Hooks for MonitoredTrainingSession
-	# iters_per_epoch = len(list(tf.python_io.tf_record_iterator(FLAGS.dataset_path))) // FLAGS.batch_size
-	iters_per_epoch = 10
+	iters_per_epoch = len(list(tf.python_io.tf_record_iterator(FLAGS.dataset_path))) // FLAGS.batch_size
 	hooks = [
 		tf.train.NanTensorHook(gen_loss),
 		tf.train.NanTensorHook(dis_loss),
