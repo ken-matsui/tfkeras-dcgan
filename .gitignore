@@ -7,4 +7,4 @@ __pycache__
 learning_images
 mnist_images
 *.tfrecord
-output
+graph

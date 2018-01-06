@@ -53,11 +53,12 @@ case $2 in
 			--module-name=DCGAN.trainer \
 			--staging-bucket=$STAGING_BACKET \
 			--region=us-central1 \
-			--scale-tier=BASIC_GPU \
-			--runtime-version 1.4 \
+			--config=./config.yaml \
 			-- \
 			--dataset_path=$INPUT_FILE \
-			--output_path="${OUTPUT_PATH}/${UNIQUE_NAME}"
+			--output_path="${OUTPUT_PATH}/${UNIQUE_NAME}" \
+			--num_gpus=4 \
+			--log_device_placement
 		# Print job details
 		gcloud ml-engine jobs describe ${JOB_ID}
 		# Open log-page
@@ -68,8 +69,8 @@ case $2 in
 "4" ) # Open Tensorboard
 	(sleep 10; open "http://localhost:6006") &
 	case $1 in
-	"local" ) tensorboard --logdir=./output/model --host=localhost ;;
-	"mlengine" ) tensorboard --logdir="${OUTPUT_PATH}/${UNIQUE_NAME}/model" --host=localhost ;;
+	"local" ) tensorboard --logdir=./graph --host=localhost ;;
+	"mlengine" ) tensorboard --logdir="${OUTPUT_PATH}/${UNIQUE_NAME}/" --host=localhost ;;
 	esac
 	;; # end switch.
 esac
