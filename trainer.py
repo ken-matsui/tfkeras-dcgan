@@ -73,8 +73,8 @@ def fit(gen, dis, dataset):
 	tf.summary.scalar("Discriminator_loss", dis_loss)
 	tf.summary.histogram("Generator_output", x_pred)
 	# max_outputs is Max number of batch elements to generate images for.
-	tf.summary.image("Generator_output_image", tf.reshape(x_pred, [FLAGS.batch_size, 96, 96, 3]), max_outputs=1)
 	tf.summary.image("Dataset", dataset, max_outputs=1)
+	tf.summary.image("Generator_output_image", tf.reshape(x_pred, [FLAGS.batch_size, 96, 96, 3]), max_outputs=3*3)
 	summary_op = tf.summary.merge_all()
 
 	# Hooks for MonitoredTrainingSession
