@@ -28,8 +28,7 @@ class ImageCSListerner(tf.train.CheckpointSaverListener):
 		x_val = session.run(self.x_pred, feed_dict={self.z: feed_z, K.learning_phase(): False})
 		xs = np.reshape(x_val, (-1, 96, 96, 3))
 		for i in range(s):
-			tmp = xs[i].transpose(1, 2, 0)
-			tmp = np.clip(tmp, 0.0, 1.0)
+			tmp = np.clip(xs[i], 0.0, 1.0)
 			pylab.subplot(row, row, i+1)
 			pylab.imshow(tmp)
 			pylab.axis("off")
