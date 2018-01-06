@@ -1,0 +1,7 @@
+# https://cloud.google.com/ml-engine/reference/rest/v1/projects.jobs?hl=ja
+trainingInput:
+  scaleTier: CUSTOM
+  masterType: "complex_model_m_p100"
+  region: "us-central1"
+  runtimeVersion: "1.4"
+  pythonVersion: "3.5"
