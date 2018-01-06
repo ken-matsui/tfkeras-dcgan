@@ -26,7 +26,7 @@ class ImageCSListerner(tf.train.CheckpointSaverListener):
 		s = row**2
 		feed_z = np.random.uniform(-1, 1, 100 * s).reshape(-1, 100).astype(np.float32)
 		x_val = session.run(self.x_pred, feed_dict={self.z: feed_z, K.learning_phase(): False})
-		xs = np.reshape(x_val, (-1, 3, 96, 96))
+		xs = np.reshape(x_val, (-1, 96, 96, 3))
 		for i in range(s):
 			tmp = xs[i].transpose(1, 2, 0)
 			tmp = np.clip(tmp, 0.0, 1.0)
