@@ -7,14 +7,14 @@ from tensorflow.python.platform import gfile
 from tensorflow.python.keras import backend as K
 # Other modules
 from model import Generator, Discriminator
-from session_hooks import ImageCSListerner, EpochLoggingTensorHook
+from session_hooks import EpochLoggingTensorHook
 
 flags = tf.app.flags
 flags.DEFINE_string("dataset_path", "./dataset.tfrecord", "GCS or local paths to training data")
-flags.DEFINE_string("output_path", "./output", "Output data dir")
+flags.DEFINE_string("output_path", "./graph", "Output graph data dir")
 flags.DEFINE_integer("batch_size", 1000, "Size of batch")
 flags.DEFINE_integer("epoch_num", 10000, "Number of epochs")
-flags.DEFINE_integer("dump_num", 1, "Number of dumps per epoch")
+flags.DEFINE_integer("dump_num", 100, "Number of dumps per epoch")
 FLAGS = flags.FLAGS
 
 
@@ -69,24 +69,27 @@ def fit(gen, dis, dataset):
 		dis_train_step = tf.train.AdamOptimizer(0.001).minimize(dis_loss, name="dis_Adam")
 
 	# Define summaries
-	tf.summary.scalar(gen_loss.name, gen_loss)
-	tf.summary.scalar(dis_loss.name, dis_loss)
-	tf.summary.image(dataset.name, dataset)
+	tf.summary.scalar("Generator_loss", gen_loss)
+	tf.summary.scalar("Discriminator_loss", dis_loss)
+	tf.summary.histogram("Generator_output", x_pred)
+	# max_outputs is Max number of batch elements to generate images for.
+	tf.summary.image("Generator_output_image", tf.reshape(x_pred, [FLAGS.batch_size, 96, 96, 3]), max_outputs=1)
+	tf.summary.image("Dataset", dataset, max_outputs=1)
 	summary_op = tf.summary.merge_all()
 
 	# Hooks for MonitoredTrainingSession
-	iters_per_epoch = len(list(tf.python_io.tf_record_iterator(FLAGS.dataset_path))) // FLAGS.batch_size
+	# iters_per_epoch = len(list(tf.python_io.tf_record_iterator(FLAGS.dataset_path))) // FLAGS.batch_size
+	iters_per_epoch = 10
 	hooks = [
 		tf.train.NanTensorHook(gen_loss),
 		tf.train.NanTensorHook(dis_loss),
 		tf.train.CheckpointSaverHook(
-			checkpoint_dir=FLAGS.output_path+"/model",
-			save_steps=FLAGS.dump_num*iters_per_epoch,
-			listeners=[ImageCSListerner(z, x_pred, FLAGS.output_path)]
+			checkpoint_dir=FLAGS.output_path,
+			save_steps=FLAGS.dump_num*iters_per_epoch
 		),
 		tf.train.SummarySaverHook(
 			save_steps=FLAGS.dump_num*iters_per_epoch,
-			output_dir=FLAGS.output_path+"/model",
+			output_dir=FLAGS.output_path,
 			summary_op=summary_op
 		),
 		EpochLoggingTensorHook(iters_per_epoch, global_step_op, gen_loss, dis_loss),
@@ -106,8 +109,7 @@ def main(argv):
 	print(len(list(tf.python_io.tf_record_iterator(FLAGS.dataset_path))), "images loaded.\n")
 
 	# Makedirs GCS or Local
-	gfile.MakeDirs(FLAGS.output_path+"/model")
-	gfile.MakeDirs(FLAGS.output_path+"/images")
+	gfile.MakeDirs(FLAGS.output_path)
 
 	gen = Generator(100)
 	dis = Discriminator()
