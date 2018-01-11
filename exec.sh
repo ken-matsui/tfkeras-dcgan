@@ -13,7 +13,8 @@ PROJECT_ID=`gcloud config list project --format "value(core.project)"`
 ML_BACKET="gs://${PROJECT_ID}-ml"
 STAGING_BACKET="gs://${PROJECT_ID}-ml-staging"
 # Dataset file directory for learning
-INPUT_FILE="${ML_BACKET}/${PROJECT_NAME}/dataset/dataset.tfrecord"
+DATASET_NAME="dataset.tfrecord"
+INPUT_FILE="${ML_BACKET}/${PROJECT_NAME}/dataset/${DATASET_NAME}"
 OUTPUT_PATH="${ML_BACKET}/${PROJECT_NAME}/output"
 
 case $2 in
@@ -33,7 +34,7 @@ case $2 in
 	trap "rm to_TFRecord.py" 0
 	# Create dataset
 	curl -O https://raw.githubusercontent.com/matken11235/to_TFRecord/master/to_TFRecord.py
-	python to_TFRecord.py $LOCAL_INPUT
+	python to_TFRecord.py $LOCAL_INPUT ./${DATASET_NAME}
 	case $1 in
 	# Copy dataset to cloud storage.
 	"mlengine" ) gsutil -o GSUtil:parallel_composite_upload_threshold=150M cp ./dataset.tfrecord $INPUT_FILE ;;
