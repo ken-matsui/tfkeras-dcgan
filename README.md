@@ -55,25 +55,25 @@ https://qiita.com/TomokIshii/items/ffe999b3e1a506c396c8
 > TensorFlowのキーコンセプト: Opノード、セッション、変数
 https://qiita.com/yanosen_jp/items/70e6d6afc36e1c0a3ef3
 
-> Github [tensorflow/tensorflow/python/training/basic_session_run_hooks.py]
+> Github - tensorflow/tensorflow/python/training/basic_session_run_hooks.py
 https://github.com/tensorflow/tensorflow/blob/r1.4/tensorflow/python/training/basic_session_run_hooks.py
 
-> Tensorflow API r1.4 tf.train.SessionRunArgs
+> Tensorflow API r1.4 - tf.train.SessionRunArgs
 https://www.tensorflow.org/api_docs/python/tf/train/SessionRunArgs
 
-> Tensorflow Develop Performance Guide
+> Tensorflow Develop - Performance Guide
 https://www.tensorflow.org/performance/performance_guide
 
-> Tensorflow Develop r1.3 Importing Data
+> Tensorflow Develop r1.3 - Importing Data
 https://www.tensorflow.org/versions/r1.3/programmers_guide/datasets
 
 > Tensoflow API r0.12 class Distributed execution [tf.train.MonitoredSession]
 https://www.tensorflow.org/versions/r0.12/api_docs/python/train/distributed_execution#MonitoredSession
 
-> Tensorflow API r1.4 Training [Training Hooks]
+> Tensorflow API r1.4 Training - Training Hooks
 https://www.tensorflow.org/api_guides/python/train#Training_Hooks
 
-> Tensorflow API r1.4 tf.train.MonitoredTrainingSession
+> Tensorflow API r1.4 - tf.train.MonitoredTrainingSession
 https://www.tensorflow.org/api_docs/python/tf/train/MonitoredTrainingSession
 
 > Tensorflow Develop TensorBoard: Visualizing Learning
@@ -85,3 +85,15 @@ https://www.tensorflow.org/get_started/tensorboard_histograms
 > あらゆるデータを可視化するTensorBoard徹底入門
 https://deepage.net/tensorflow/2017/04/25/tensorboard.html
 
+### multi-GPU
+> 6.マルチGPUカードを使用してモデルのトレーニング
+http://tensorflow.hatenablog.com/entry/2016/01/25/210000
+
+> Github - tensorflow/models/tutorials/image/cifar10/cifar10_multi_gpu_train.py
+https://github.com/tensorflow/models/blob/master/tutorials/image/cifar10/cifar10_multi_gpu_train.py
+
+> TensorFlow : CNN – 畳み込み ニューラルネットワーク for CIFAR-10 （コード解説）
+http://tensorflow.classcat.com/2016/03/12/tensorflow-cc-convolutional-neural-networks/
+
+> TensorFlow: snippet: GPU
+http://tensorflow.classcat.com/2016/02/14/tensorflow-snippet-gpu/
